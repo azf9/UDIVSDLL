@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Proyección Dólar vs UDI</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #e0eafc, #cfdef3);
+      margin: 0;
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    header img {
+      max-width: 250px;
+    }
+    h2 {
+      color: #2c3e50;
+      margin-bottom: 20px;
+    }
+    .form-container {
+      background: white;
+      padding: 20px 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      margin-bottom: 30px;
+      width: 100%;
+      max-width: 700px;
+    }
+    .input-group {
+      margin-bottom: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    label {
+      font-weight: 600;
+    }
+    input[type="number"] {
+      width: 180px;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    button {
+      padding: 12px 24px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      display: block;
+      margin: 0 auto;
+    }
+    button:hover {
+      background-color: #2980b9;
+    }
+    .tables-container {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+      width: 100%;
+      max-width: 900px;
+      margin-top: 20px;
+    }
+    table {
+      flex: 1;
+      border-collapse: collapse;
+      background-color: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    th, td {
+      padding: 10px;
+      text-align: center;
+      border-bottom: 1px solid #ddd;
+    }
+    th {
+      background-color: #3498db;
+      color: white;
+    }
+    canvas {
+      margin-top: 40px;
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body>
+  
+  <h2>Proyección Comparativa: Dólar vs UDI</h2>
+
+  <div class="form-container">
+    <div class="input-group">
+      <label>Valor inicial del Dólar:</label>
+      <input type="number" id="valorDolar" step="0.01">
+    </div>
+
+    <div class="input-group">
+      <label>Valor inicial de la UDI:</label>
+      <input type="number" id="valorUDI" step="0.0001">
+    </div>
+
+    <div class="input-group">
+      <label>Inflación anual UDI (%):</label>
+      <input type="number" id="inflacionUDI" step="0.01">
+    </div>
+
+    <div class="input-group">
+      <label>Inflación anual Dólar (%):</label>
+      <input type="number" id="inflacionDolar" step="0.01">
+    </div>
+
+    <div class="input-group">
+      <label>Proyección (años):</label>
+      <input type="number" id="anios" step="1" min="1">
+    </div>
+
+    <button onclick="generarProyeccion()">Generar Proyección</button>
+  </div>
+
+  <div class="tables-container">
+    <table id="tablaDolar">
+      <thead>
+        <tr><th>Año</th><th>Valor Dólar</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <table id="tablaUDI">
+      <thead>
+        <tr><th>Año</th><th>Valor UDI</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <canvas id="grafica" width="900" height="400"></canvas>
+
+  <script>
+    function generarProyeccion() {
+      const valorDolar = parseFloat(document.getElementById('valorDolar').value);
+      const valorUDI = parseFloat(document.getElementById('valorUDI').value);
+      const inflacionUDI = parseFloat(document.getElementById('inflacionUDI').value) / 100;
+      const inflacionDolar = parseFloat(document.getElementById('inflacionDolar').value) / 100;
+      const anios = parseInt(document.getElementById('anios').value);
+
+      const tablaDolarBody = document.querySelector('#tablaDolar tbody');
+      const tablaUDIBody = document.querySelector('#tablaUDI tbody');
+      tablaDolarBody.innerHTML = '';
+      tablaUDIBody.innerHTML = '';
+
+      let valoresDolar = [];
+      let valoresUDI = [];
+      let etiquetas = [];
+
+      let actualDolar = valorDolar;
+      let actualUDI = valorUDI;
+
+      for (let i = 0; i <= anios; i++) {
+        etiquetas.push(`Año ${i}`);
+        valoresDolar.push(actualDolar.toFixed(2));
+        valoresUDI.push(actualUDI.toFixed(4));
+
+        tablaDolarBody.innerHTML += `<tr><td>${i}</td><td>$${actualDolar.toFixed(2)}</td></tr>`;
+        tablaUDIBody.innerHTML += `<tr><td>${i}</td><td>$${actualUDI.toFixed(4)}</td></tr>`;
+
+        actualDolar *= (1 + inflacionDolar);
+        actualUDI *= (1 + inflacionUDI);
+      }
+
+      const ctx = document.getElementById('grafica').getContext('2d');
+      if (window.miGrafica) window.miGrafica.destroy();
+
+      window.miGrafica = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: etiquetas,
+          datasets: [
+            {
+              label: 'Proyección Dólar',
+              data: valoresDolar,
+              borderColor: 'blue',
+              borderWidth: 2,
+              fill: false
+            },
+            {
+              label: 'Proyección UDI',
+              data: valoresUDI,
+              borderColor: 'green',
+              borderWidth: 2,
+              fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: false,
+              title: {
+                display: true,
+                text: 'Valor ($)'
+              }
+            }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
